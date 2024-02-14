@@ -3,10 +3,13 @@ const { userAuth } = require("../middleware/userAuth");
 const { User, Account } = require("../db");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const { checkLoggedIn } = require("../middleware/checkUserLoggedIn");
 const router = express.Router();
 
 router.use(userAuth);
+router.use(checkLoggedIn);
 router.get("/balance",async (req, res)=>{
+    console.log(`session username: ${req.session.username}`);
     const token = req.headers.authorization.trim().split(" ")[1];
     const username = jwt.decode(token).username;
     console.log(token);
@@ -32,6 +35,7 @@ router.get("/balance",async (req, res)=>{
 });
 
 router.post("/transfer",async (req, res)=>{
+    console.log(`session username: ${req.session.username}`);
     //Retreiving user info from request jwt
     const token = req.headers.authorization.trim().split(" ")[1];
     const username = jwt.decode(token).username;

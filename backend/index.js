@@ -3,6 +3,8 @@ const app = express();
 const mongoose = require("mongoose");
 const cors = require("cors");
 const {router} = require("./routes/index.js");
+const session = require('express-session')
+const MongoStore = require("connect-mongo");
 
 //Import the env variables from .env
 require("dotenv").config();
@@ -15,6 +17,23 @@ mongoose.connect(process.env.MONGO_URL+process.env.DB_NAME)
                 console.log("Error connecting to mongo server MongoURL: "+process.env.MONGO_URL+" DB_NAME: "+process.env.DB_NAME);
                 console.log("Error: "+err);
         });
+
+app.use(session(
+        {
+            secret: process.env.EXPRESS_SESSION_SECRET,
+            resave: true,
+            saveUninitialized: false,
+            cookie: { maxAge: 24 * 60 * 60 * 1000 },
+            store: MongoStore.create({
+                client: mongoose.connection.getClient(),
+                dbName: process.env.MONGO_DB_NAME,
+                collectionName: "sessions",
+                stringify: false,
+                autoRemove: "interval",
+                autoRemoveInterval: 1
+            })
+        }) 
+);    
 
 //Necessary to include cors options, when dealing with frontend and backend working on different ports
 app.use(cors(

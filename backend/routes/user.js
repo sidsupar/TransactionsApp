@@ -8,6 +8,7 @@ const { User } = require("../db");
 const { validUserCheck } = require("../middleware/validUserCheck");
 const zod = require("zod");
 const { setRandomBalance } = require("../middleware/setRandomBalance");
+const { checkLoggedIn } = require("../middleware/checkUserLoggedIn");
 
 
 router.post("/signup",userSignUpInputValidation, userRedundancyCheck,async (req, res)=>{
@@ -50,6 +51,7 @@ router.post("/signup",userSignUpInputValidation, userRedundancyCheck,async (req,
 });
 
 router.post("/signin", validUserCheck,(req,res)=>{
+    req.session.username = req.body.username
     try{
         const username = req.body.username;
         const password = req.body.password;
@@ -68,10 +70,33 @@ router.post("/signin", validUserCheck,(req,res)=>{
     }
 
 });
-
+router.get("/checkLoginStatus",(req,res)=>{
+    console.log(`session username: ${req.session.username}`);
+    try{
+        if(req.session.username != undefined){
+            res.status(201).json({
+                isLoggedIn: true,
+                status:"ok"
+            })
+        }else{
+            res.status(503).json({
+                isLoggedIn:false,
+                status:"bad"
+            })
+        }
+    }catch(err){
+        res.status(504).json({
+            error:err.message,
+            route:"checkLoginStatus"
+        });
+    }
+    
+})
 router.use(userAuth);
+router.use(checkLoggedIn);
 
 router.put("/" ,async (req, res)=>{
+    console.log(`session username: ${req.session.username}`);
     const zodUserUpdateObject = zod.object({
         password:zod.string().optional(),
         firstname:zod.string().optional(),
@@ -111,6 +136,7 @@ router.put("/" ,async (req, res)=>{
 })
 
 router.get("/bulk", async(req, res)=>{
+    console.log(`session username: ${req.session.username}`);
     const filter = req.query.filter;
     console.log("Filter = "+filter);
 
