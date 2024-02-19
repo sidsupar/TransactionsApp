@@ -1,85 +1,36 @@
-import { useEffect, useRef, useState } from "react";
-import {PropTypes} from "prop-types";
 import axios from "axios";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useEffect, useRef, useState } from "react";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import { setLogin, userData } from "../GlobalStates/atom";
 import { useNavigate } from "react-router";
 
-async function useSignUp(props){
-
-    axios.defaults.withCredentials = true
-
-    const signUpBody = {
-        username:props.userName,
-        password:props.password,
-        lastname:props.lastName,
-        firstname:props.firstName
-    }
-    console.log(`username received for SignUp = ${props.userName}`);
-    console.log(`password received for SignUp = ${props.password}`);
-    console.log(`password received for SignUp = ${props.firstName}`);
-    console.log(`password received for SignUp = ${props.lastName}`);
-
-    const url = "http://localhost:3002/api/v1/user/signup";
-    try{
-        const res = await axios.post(url, signUpBody, {
-            headers:{
-                "content-type":"application/json"
-            }
-        })
-        console.log("Response Received inside SignUp")
-        console.log(res)
-        if(res != undefined){
-            if(res.status == 201){
-                console.log("Response Received in SignUp");
-                console.log(res.data)
-                return {
-                    data:{
-                        token:res.data.token,
-                        status:"ok"
-                    }
-                }
-            }else{
-                throw new Error("Error occured while logging in error: "+ res.data.err);
-            }
-        }
-    }catch(err){
-        console.log("Error while signing In");
-        return {
-            error:err,
-            status:"bad"
-        }
-    }
-
-
-}
-
-async function useLogin(props, userDataSetState){
+async function useUserUpdate(props){
     // const userDataSetState = useSetRecoilState(userData);
     axios.defaults.withCredentials = true
 
-    const loginBody = {
+    const userUpdateBody = {
         username:props.userName,
-        password:props.password
+        password:props.password,
+        lastname:props.lastName,
+        firstName:props.firstName
     }
     console.log(`username received for login = ${props.userName}`)
     console.log(`password received for login = ${props.password}`)
 
-    const url = "http://localhost:3002/api/v1/user/signin";
+    const url = "http://localhost:3002/api/v1/user/";
     try{
-        const res = await axios.post(url, loginBody, {
+        const res = await axios.put(url, userUpdateBody, {
             headers:{
-                "content-type":"application/json"
+                Authorization: "Bearer " +localStorage.getItem("jwtToken")
             }
         })
         if(res != undefined){
-            if(res.status == 200){
-                console.log("Response Received in Login");
+            if(res.status == 201){
+                console.log("Response Received in User Update");
                 console.log(res)
-                userDataSetState(res.data.userData);
                 return {
                     data:{
-                        token:res.data.token,
+                        msg:res.data.msg,
                         status:"ok"
                     }
                 }
@@ -88,7 +39,7 @@ async function useLogin(props, userDataSetState){
             }
         }
     }catch(err){
-        console.log("Error while signing In");
+        console.log("Error while updating user data");
         return {
             error:err,
             status:"bad"
@@ -99,9 +50,6 @@ async function useLogin(props, userDataSetState){
 
 function SubmitButton(props){
     const [submitClick, setSubmitClick] = useState(false);
-    const [loginSignup, setLoginSignUp] = useState(false);
-    const userDataSetState = useSetRecoilState(userData);
-    const setLoginMethod = useSetRecoilState(setLogin);
 
     const navigate = useNavigate();
     function handleSubmit(e){
@@ -109,24 +57,24 @@ function SubmitButton(props){
     }
 
     useEffect(()=>{
-        const signLoginCall = async ()=>{
+        const userUpdateDataMethod = async ()=>{
             
-            const res = await props.formType == "signUp" ?await useSignUp(props): await useLogin(props, userDataSetState);
+            const res = await useUserUpdate(props);
             console.log(res)
             if(res.data!=undefined){                
                 if(res.data.status == "ok"){
-                    setLoginSignUp((val)=>!val);
-                    localStorage.setItem("jwtToken",res.data.token);
-                    
-                    setLoginMethod(true);
-                    console.log("Logged or Signed in successfully");
+                    console.log("User updated successfully");
                     navigate("/");
                 }else{
-                    console.log("Login or SignUp failed"+res.error)
+                    console.log("User update failed"+res.error)
                 }   
             }
         }
-        signLoginCall();
+        if(submitClick){
+            userUpdateDataMethod();
+            setSubmitClick(false);
+        }
+        
     },[submitClick]);
 
     return(
@@ -136,6 +84,7 @@ function SubmitButton(props){
     )
 
 }
+
 
 function Password(props){
     const passwordRef = useRef();
@@ -162,7 +111,6 @@ function LastName(props){
     )
 
 }
-
 function FirstName(props){
     const firstname = useRef();
     return(
@@ -189,13 +137,13 @@ function Username(props){
 
 }
 
-function SignLogin(props){
-    
+export default function UserUpdate(){
+
     const [usernameVal, setUsernameVal] = useState("");
     const [firstName, setFirstname] = useState("");
     const [lastname, setLastname] = useState("");
     const [password, setPassword] = useState("");
-
+    const userDataValue = useRecoilValue(userData);
     function handleInput(e, state, setState){
         setState(e.target.value);
         console.log(`${state}`)
@@ -204,18 +152,11 @@ function SignLogin(props){
     return(
         <div className="transition ease-in-out delay-2000 p-2 flex flex-col gap-1.5 w-max border border-gray-300 rounded-md shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] focus-within:shadow-[rgba(6,_24,_44,_0.4)_0px_0px_0px_2px,_rgba(6,_24,_44,_0.65)_0px_4px_6px_-1px,_rgba(255,_255,_255,_0.08)_0px_1px_0px_inset]">
             <Username handleInput={handleInput} usernameVal={usernameVal} setUsernameVal={setUsernameVal}/>
-            {props.formType == "signUp" ? <FirstName handleInput={handleInput} firstName={firstName} setFirstname={setFirstname}/>:null}
-            {props.formType == "signUp" ? <LastName handleInput={handleInput} lastname={lastname} setLastname={setLastname}/>:null}
+            <FirstName handleInput={handleInput} firstName={firstName} setFirstname={setFirstname}/>
+            <LastName handleInput={handleInput} lastname={lastname} setLastname={setLastname}/>
             <Password handleInput={handleInput} password={password} setPassword={setPassword}/>
-            <SubmitButton formType={props.formType} userName={usernameVal} firstName={firstName} lastName={lastname} password={password}/>
+            <SubmitButton userName={userDataValue.username} firstName={firstName} lastName={lastname} password={password}/>
         </div>
     )
-    
-}
 
-export default SignLogin;
-
-Username.propTypes = {
-    handleInput:PropTypes.func,
-    printVal:PropTypes.func
 }

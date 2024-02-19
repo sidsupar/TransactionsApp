@@ -50,16 +50,21 @@ router.post("/signup",userSignUpInputValidation, userRedundancyCheck,async (req,
 
 });
 
-router.post("/signin", validUserCheck,(req,res)=>{
+router.post("/signin", validUserCheck, async (req,res)=>{
     req.session.username = req.body.username
     try{
         const username = req.body.username;
         const password = req.body.password;
         const jwtToken = jwt.sign({username},process.env.SECRET_KEY);
-
+        const user = await User.findOne({username});
+        const userData = {
+            firstname: user.firstname,
+            lastname: user.lastname,
+        }
         res.status(200).json({
             msg:"User signed in successfully",
-            token:jwtToken
+            token:jwtToken,
+            userData
         })
 
     }catch(err){
@@ -160,9 +165,11 @@ router.get("/bulk", async(req, res)=>{
                 const {_id, password, ...userUpdated} = user;
                 return userUpdated;
             });
-
+            const filteredDataWithoutUser = filteredData.filter((user)=>user.username != req.session.username);
+            console.log("User bulk request")
+            console.log(filteredDataWithoutUser);
             res.status(200).json({
-                filteredData
+                filteredData:filteredDataWithoutUser
             })
         }
         
@@ -174,6 +181,21 @@ router.get("/bulk", async(req, res)=>{
     }
 
 });
+
+router.get("/logout", (req, res)=>{
+    try{
+        req.session.destroy(()=>{
+            res.clearCookie("connect.sid", {expires: new Date()});
+            res.status(200).json({
+                msg:"User logged out successfully"
+            })
+        })
+    }catch(err){    
+        res.status(404).json({
+            msg:"Error logging you out"
+        })            
+    }
+})
 
 module.exports = {
     userRouter: router

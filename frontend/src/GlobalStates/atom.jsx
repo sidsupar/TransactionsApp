@@ -1,9 +1,19 @@
 import axios from "axios";
 import {atom, selector} from "recoil";
+import { recoilPersist } from 'recoil-persist'
+
+const { persistAtom } = recoilPersist()
 
 export const setLogin = atom({
     key:"setLoginKey",
-    default:false
+    default:false,
+    effects_UNSTABLE: [persistAtom],
+})
+
+export const userData = atom({
+    key:"userDataKey",
+    default:{},
+    effects_UNSTABLE: [persistAtom],
 })
 
 export const isLoggedInSelector = selector({
@@ -11,7 +21,8 @@ export const isLoggedInSelector = selector({
     get:async ({get})=>{
         axios.defaults.withCredentials = true;
         const token = localStorage.getItem("jwtToken");
-        const setLog = get(setLogin)       ;
+        const setLog = get(setLogin);
+        console.log(setLog)
         console.log(`token = ${token}`);            
         //http://localhost:3002/api/v1/user/signup
         try{         
@@ -35,5 +46,6 @@ export const isLoggedInSelector = selector({
             console.log("Error in selector call: "+err.message);
             return false;
         }
-    }
+    },
+    effects_UNSTABLE: [persistAtom],
 })

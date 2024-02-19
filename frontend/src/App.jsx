@@ -5,6 +5,7 @@ import SignIn from "./pages/signin.jsx"
 import SignUp from "./pages/signup.jsx"
 import { RecoilRoot } from "recoil";
 import Dashboard from "./pages/dashboard.jsx";
+import SendMoneyWrapper from "./pages/sendMoney.jsx";
 function App() {
 
   return (
@@ -17,6 +18,7 @@ function App() {
               <Route path="signin" element={<SignIn />} />
               <Route path="signup" element={<SignUp />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="send" element={<SendMoneyWrapper />} />
             </Route>
           </Routes>
         </RecoilRoot>
